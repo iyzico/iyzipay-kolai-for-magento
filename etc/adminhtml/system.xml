@@ -1,0 +1,132 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="kolai" translate="label" type="text" sortOrder="400" showInDefault="1" showInWebsite="1">
+            <class>separator-top</class>
+            <label>Kolai</label>
+            <tab>sales</tab>
+            <resource>Iyzico_Kolai::config</resource>
+
+            <group id="general" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1">
+                <label>Genel</label>
+                <field id="enabled" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" canRestore="1">
+                    <label>Entegrasyon aktif</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[Kapalıyken Kolai uçları isteği reddeder. Uç adresi: <code>https://magaza-adresiniz/kolai/v1</code>]]></comment>
+                </field>
+            </group>
+
+            <group id="api" translate="label comment" sortOrder="20" showInDefault="1" showInWebsite="1">
+                <label>Kolai API kimlik bilgileri</label>
+                <comment>Kolai panelinden alınan anahtarlar. Gelen isteklerin HMAC imzası bunlarla doğrulanır.</comment>
+                <field id="api_key" translate="label" type="obscure" sortOrder="10" showInDefault="1" showInWebsite="1">
+                    <label>API anahtarı</label>
+                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
+                </field>
+                <field id="secret_key" translate="label" type="obscure" sortOrder="20" showInDefault="1" showInWebsite="1">
+                    <label>Gizli anahtar</label>
+                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
+                </field>
+            </group>
+
+            <group id="iyzico" translate="label comment" sortOrder="30" showInDefault="1" showInWebsite="1">
+                <label>iyzico (iade / iptal)</label>
+                <comment>İade ve iptal çağrıları bu hesap üzerinden yapılır.</comment>
+                <field id="environment" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" canRestore="1">
+                    <label>Ortam</label>
+                    <source_model>Iyzico\Kolai\Model\Config\Source\Environment</source_model>
+                </field>
+                <field id="api_key" translate="label" type="obscure" sortOrder="20" showInDefault="1" showInWebsite="1">
+                    <label>API anahtarı</label>
+                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
+                </field>
+                <field id="secret_key" translate="label" type="obscure" sortOrder="30" showInDefault="1" showInWebsite="1">
+                    <label>Gizli anahtar</label>
+                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
+                </field>
+            </group>
+
+            <group id="seller" translate="label comment" sortOrder="40" showInDefault="1" showInWebsite="1">
+                <label>Satıcı bilgileri</label>
+                <comment>Sözleşmelerdeki satıcı yer tutucuları bu alanlardan doldurulur. Boş bırakılan alan sözleşmede yer tutucu olarak görünür.</comment>
+                <field id="name" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1">
+                    <label>Unvan</label>
+                </field>
+                <field id="address" translate="label" type="textarea" sortOrder="20" showInDefault="1" showInWebsite="1">
+                    <label>Adres</label>
+                </field>
+                <field id="phone" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1">
+                    <label>Telefon</label>
+                </field>
+                <field id="email" translate="label" type="text" sortOrder="40" showInDefault="1" showInWebsite="1">
+                    <label>E-posta</label>
+                    <validate>validate-email</validate>
+                </field>
+                <field id="tax_id" translate="label" type="text" sortOrder="50" showInDefault="1" showInWebsite="1">
+                    <label>VKN</label>
+                </field>
+                <field id="mersis_no" translate="label" type="text" sortOrder="60" showInDefault="1" showInWebsite="1">
+                    <label>MERSİS numarası</label>
+                </field>
+            </group>
+
+            <group id="contract" translate="label comment" sortOrder="50" showInDefault="1" showInWebsite="1">
+                <label>Sözleşmeler</label>
+                <comment><![CDATA[Şablonlar boş bırakılırsa paketteki varsayılan metinler kullanılır. Alıcı ve sipariş yer tutucuları ({{buyer_name}}, {{order_total}}, {{product_list}} …) çıkışta Kolai tarafından doldurulur, şablonda bırakın.]]></comment>
+                <field id="delivery_date" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" canRestore="1">
+                    <label>Tahmini teslim süresi</label>
+                </field>
+                <field id="right_of_withdrawal_period" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" canRestore="1">
+                    <label>Cayma hakkı süresi</label>
+                </field>
+                <field id="clarification_page" translate="label comment" type="select" sortOrder="25" showInDefault="1" showInWebsite="1">
+                    <label>Aydınlatma Metni sayfası</label>
+                    <source_model>Iyzico\Kolai\Model\Config\Source\CmsPage</source_model>
+                    <comment>GET /contracts/clarification-text bu CMS sayfasının bağlantısını döner.</comment>
+                </field>
+                <field id="distance_sales" translate="label" type="textarea" sortOrder="30" showInDefault="1" showInWebsite="1">
+                    <frontend_model>Iyzico\Kolai\Block\Adminhtml\System\Config\ContractField</frontend_model>
+                    <label>Mesafeli Satış Sözleşmesi</label>
+                </field>
+                <field id="preliminary_info" translate="label" type="textarea" sortOrder="40" showInDefault="1" showInWebsite="1">
+                    <frontend_model>Iyzico\Kolai\Block\Adminhtml\System\Config\ContractField</frontend_model>
+                    <label>Ön Bilgilendirme Formu</label>
+                </field>
+            </group>
+
+            <group id="shipping" translate="label comment" sortOrder="60" showInDefault="1" showInWebsite="1">
+                <label>Kargo</label>
+                <comment>Kolai'ye sunulacak kargo yöntemleri. Hiçbiri seçilmezse mağazada aktif olan tüm yöntemler sunulur.</comment>
+                <field id="allowed_methods" translate="label" type="multiselect" sortOrder="10" showInDefault="1" showInWebsite="1" canRestore="1">
+                    <label>İzin verilen kargo yöntemleri</label>
+                    <source_model>Magento\Shipping\Model\Config\Source\Allmethods</source_model>
+                    <can_be_empty>1</can_be_empty>
+                </field>
+            </group>
+
+            <group id="log" translate="label comment" sortOrder="70" showInDefault="1">
+                <label>Loglar</label>
+                <comment><![CDATA[Kayıtlar Sistem › Kolai Logları sayfasında görünür. Kişisel veriler maskelenerek yazılır.]]></comment>
+                <field id="enabled" translate="label" type="select" sortOrder="10" showInDefault="1" canRestore="1">
+                    <label>Log tutmayı etkinleştir</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="level" translate="label" type="select" sortOrder="20" showInDefault="1" canRestore="1">
+                    <label>Minimum log seviyesi</label>
+                    <source_model>Iyzico\Kolai\Model\Config\Source\LogLevel</source_model>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                </field>
+                <field id="retention_days" translate="label comment" type="text" sortOrder="30" showInDefault="1" canRestore="1">
+                    <label>Saklama süresi (gün)</label>
+                    <validate>validate-digits</validate>
+                    <comment>Daha eski kayıtlar saatlik cron ile silinir. 0 = sınırsız (önerilmez).</comment>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

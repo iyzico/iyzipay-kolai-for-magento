@@ -1,0 +1,93 @@
+{
+    "kolai_nonce": {
+        "column": {
+            "nonce_hash": true,
+            "expires_at": true
+        },
+        "index": {
+            "KOLAI_NONCE_EXPIRES_AT": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "kolai_order": {
+        "column": {
+            "order_id": true,
+            "payment_id": true,
+            "item_transactions": true,
+            "refunded_transactions": true,
+            "refund_operations": true,
+            "cancel_result": true,
+            "installment_count": true,
+            "invoice_type": true,
+            "tax_id": true,
+            "tax_office": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "KOLAI_ORDER_ORDER_ID_SALES_ORDER_ENTITY_ID": true
+        }
+    },
+    "kolai_log": {
+        "column": {
+            "log_id": true,
+            "created_at": true,
+            "level": true,
+            "context": true,
+            "request_id": true,
+            "method": true,
+            "route": true,
+            "message": true,
+            "data": true,
+            "duration_ms": true
+        },
+        "index": {
+            "KOLAI_LOG_CREATED_AT": true,
+            "KOLAI_LOG_LEVEL": true,
+            "KOLAI_LOG_CONTEXT": true,
+            "KOLAI_LOG_REQUEST_ID": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "quote": {
+        "column": {
+            "kolai_discount_amount": true,
+            "base_kolai_discount_amount": true
+        }
+    },
+    "quote_address": {
+        "column": {
+            "kolai_discount_amount": true,
+            "base_kolai_discount_amount": true
+        }
+    },
+    "sales_order": {
+        "column": {
+            "kolai_discount_amount": true,
+            "base_kolai_discount_amount": true,
+            "kolai_installment_fee": true,
+            "base_kolai_installment_fee": true
+        }
+    },
+    "sales_invoice": {
+        "column": {
+            "kolai_discount_amount": true,
+            "base_kolai_discount_amount": true,
+            "kolai_installment_fee": true,
+            "base_kolai_installment_fee": true
+        }
+    },
+    "sales_creditmemo": {
+        "column": {
+            "kolai_discount_amount": true,
+            "base_kolai_discount_amount": true,
+            "kolai_installment_fee": true,
+            "base_kolai_installment_fee": true
+        }
+    }
+}

@@ -1,0 +1,139 @@
+<?php
+/** @var \Iyzico\Kolai\Block\Adminhtml\Logs $block */
+/** @var \Magento\Framework\Escaper $escaper */
+$filters = $block->getFilters();
+$result = $block->getResult();
+$page = $result['page'];
+$totalPages = $block->getTotalPages();
+$levelColors = ['debug' => '#7a7a7a', 'info' => '#007bdb', 'warning' => '#eb5202', 'error' => '#e22626'];
+?>
+<?php if (!$block->isLogEnabled()): ?>
+    <div class="message message-notice" style="margin-bottom:16px">
+        <?= $escaper->escapeHtml(__('Log tutma kapalı; yeni kayıt yazılmıyor.')) ?>
+        <a href="<?= $escaper->escapeUrl($block->getSettingsUrl()) ?>"><?= $escaper->escapeHtml(__('Kolai ayarlarından açın.')) ?></a>
+    </div>
+<?php else: ?>
+    <p style="margin-bottom:12px">
+        <?= $escaper->escapeHtml(__('Log tutma açık, minimum seviye: %1', $block->getMinimumLevel())) ?>
+    </p>
+<?php endif; ?>
+
+<form method="get" action="<?= $escaper->escapeUrl($block->getIndexUrl()) ?>"
+      style="display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; margin-bottom:16px">
+    <label>
+        <span style="display:block"><?= $escaper->escapeHtml(__('Seviye')) ?></span>
+        <select name="level" class="admin__control-select">
+            <option value=""><?= $escaper->escapeHtml(__('Tümü')) ?></option>
+            <?php foreach ($block->getLevels() as $level): ?>
+                <option value="<?= $escaper->escapeHtmlAttr($level) ?>" <?= $filters['level'] === $level ? 'selected' : '' ?>>
+                    <?= $escaper->escapeHtml($level) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </label>
+    <label>
+        <span style="display:block"><?= $escaper->escapeHtml(__('Bağlam')) ?></span>
+        <select name="context" class="admin__control-select">
+            <option value=""><?= $escaper->escapeHtml(__('Tümü')) ?></option>
+            <?php foreach ($block->getContexts() as $context): ?>
+                <option value="<?= $escaper->escapeHtmlAttr($context) ?>" <?= $filters['context'] === $context ? 'selected' : '' ?>>
+                    <?= $escaper->escapeHtml($context) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </label>
+    <label>
+        <span style="display:block"><?= $escaper->escapeHtml(__('Ara')) ?></span>
+        <input type="text" name="search" class="admin__control-text"
+               value="<?= $escaper->escapeHtmlAttr($filters['search']) ?>"
+               placeholder="<?= $escaper->escapeHtmlAttr(__('mesaj, veri veya yol')) ?>"/>
+    </label>
+    <label>
+        <span style="display:block"><?= $escaper->escapeHtml(__('İstek kimliği')) ?></span>
+        <input type="text" name="request_id" class="admin__control-text"
+               value="<?= $escaper->escapeHtmlAttr($filters['request_id']) ?>"/>
+    </label>
+    <button type="submit" class="action-default"><?= $escaper->escapeHtml(__('Filtrele')) ?></button>
+    <a class="action-default" href="<?= $escaper->escapeUrl($block->getIndexUrl()) ?>"
+       style="text-decoration:none; padding:.6rem 1rem"><?= $escaper->escapeHtml(__('Sıfırla')) ?></a>
+    <a class="action-default" href="<?= $escaper->escapeUrl($block->getFilterUrl(['p' => $page])) ?>"
+       style="text-decoration:none; padding:.6rem 1rem"><?= $escaper->escapeHtml(__('Yenile')) ?></a>
+</form>
+
+<form method="post" action="<?= $escaper->escapeUrl($block->getClearUrl()) ?>" style="margin-bottom:16px"
+      onsubmit="return confirm('<?= $escaper->escapeJs(__('Tüm Kolai logları kalıcı olarak silinecek. Emin misiniz?')) ?>');">
+    <?= $block->getBlockHtml('formkey') ?>
+    <button type="submit" class="action-secondary"><?= $escaper->escapeHtml(__('Tüm logları temizle')) ?></button>
+</form>
+
+<p><?= $escaper->escapeHtml(__('%1 kayıt — sayfa %2 / %3', $result['total'], $page, $totalPages)) ?></p>
+
+<table class="data-grid" style="table-layout:fixed; width:100%">
+    <thead>
+    <tr>
+        <th class="data-grid-th" style="width:150px"><?= $escaper->escapeHtml(__('Zaman (UTC)')) ?></th>
+        <th class="data-grid-th" style="width:80px"><?= $escaper->escapeHtml(__('Seviye')) ?></th>
+        <th class="data-grid-th" style="width:90px"><?= $escaper->escapeHtml(__('Bağlam')) ?></th>
+        <th class="data-grid-th" style="width:220px"><?= $escaper->escapeHtml(__('İstek')) ?></th>
+        <th class="data-grid-th"><?= $escaper->escapeHtml(__('Mesaj')) ?></th>
+        <th class="data-grid-th" style="width:70px"><?= $escaper->escapeHtml(__('Süre')) ?></th>
+    </tr>
+    </thead>
+    <tbody>
+    <?php if (!$result['rows']): ?>
+        <tr class="data-row">
+            <td colspan="6" style="text-align:center"><?= $escaper->escapeHtml(__('Kayıt yok.')) ?></td>
+        </tr>
+    <?php endif; ?>
+    <?php foreach ($result['rows'] as $row): ?>
+        <?php $data = $block->formatData($row['data'] ?? null); ?>
+        <tr class="data-row">
+            <td><?= $escaper->escapeHtml((string) $row['created_at']) ?></td>
+            <td>
+                <strong style="color:<?= $escaper->escapeHtmlAttr($levelColors[$row['level']] ?? '#333') ?>">
+                    <?= $escaper->escapeHtml((string) $row['level']) ?>
+                </strong>
+            </td>
+            <td>
+                <a href="<?= $escaper->escapeUrl($block->getFilterUrl(['context' => (string) $row['context'], 'p' => ''])) ?>">
+                    <?= $escaper->escapeHtml((string) $row['context']) ?>
+                </a>
+            </td>
+            <td style="word-break:break-all">
+                <?= $escaper->escapeHtml(trim(($row['method'] ?? '') . ' ' . ($row['route'] ?? ''))) ?>
+                <?php if (!empty($row['request_id'])): ?>
+                    <br><small>
+                        <a href="<?= $escaper->escapeUrl($block->getFilterUrl(['request_id' => (string) $row['request_id'], 'p' => ''])) ?>"
+                           title="<?= $escaper->escapeHtmlAttr(__('Bu isteğin tüm kayıtları')) ?>">
+                            rid: <?= $escaper->escapeHtml(substr((string) $row['request_id'], 0, 8)) ?>
+                        </a>
+                    </small>
+                <?php endif; ?>
+            </td>
+            <td style="word-break:break-word">
+                <?= $escaper->escapeHtml((string) $row['message']) ?>
+                <?php if ($data !== ''): ?>
+                    <details style="margin-top:4px">
+                        <summary style="cursor:pointer"><?= $escaper->escapeHtml(__('veri')) ?></summary>
+                        <pre style="white-space:pre-wrap; max-height:400px; overflow:auto; background:#f8f8f8; padding:8px"><?= $escaper->escapeHtml($data) ?></pre>
+                    </details>
+                <?php endif; ?>
+            </td>
+            <td><?= $row['duration_ms'] !== null ? $escaper->escapeHtml($row['duration_ms'] . ' ms') : '' ?></td>
+        </tr>
+    <?php endforeach; ?>
+    </tbody>
+</table>
+
+<?php if ($totalPages > 1): ?>
+    <div style="margin-top:12px; display:flex; gap:8px">
+        <?php if ($page > 1): ?>
+            <a class="action-default" style="text-decoration:none; padding:.6rem 1rem"
+               href="<?= $escaper->escapeUrl($block->getFilterUrl(['p' => $page - 1])) ?>">‹ <?= $escaper->escapeHtml(__('Önceki')) ?></a>
+        <?php endif; ?>
+        <?php if ($page < $totalPages): ?>
+            <a class="action-default" style="text-decoration:none; padding:.6rem 1rem"
+               href="<?= $escaper->escapeUrl($block->getFilterUrl(['p' => $page + 1])) ?>"><?= $escaper->escapeHtml(__('Sonraki')) ?> ›</a>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>

@@ -1,0 +1,24 @@
+<?php
+/** @var \Iyzico\Kolai\Block\Adminhtml\System\Config\ContractField $block */
+$unknown = $block->getUnknownPlaceholders();
+?>
+<?php if ($unknown): ?>
+    <div class="message message-warning" style="margin-top:8px">
+        <?= $block->escapeHtml(__('Bilinmeyen yer tutucu, müşteriye olduğu gibi gider: %1', implode(', ', $unknown))) ?>
+    </div>
+<?php endif; ?>
+<div class="kolai-placeholders"
+     data-mage-init='{"Iyzico_Kolai/js/contract-placeholders": {}}'
+     style="margin-top:8px">
+    <?php foreach ($block->getPlaceholderGroups() as $title => $placeholders): ?>
+        <p style="margin:6px 0 2px"><strong><?= $block->escapeHtml($title) ?></strong></p>
+        <?php foreach ($placeholders as $placeholder => $description): ?>
+            <button type="button" class="action-default scalable"
+                    style="margin:0 4px 4px 0; font-weight:400"
+                    data-placeholder="<?= $block->escapeHtmlAttr($placeholder) ?>"
+                    title="<?= $block->escapeHtmlAttr($placeholder) ?>">
+                + <?= $block->escapeHtml($description) ?>
+            </button>
+        <?php endforeach; ?>
+    <?php endforeach; ?>
+</div>

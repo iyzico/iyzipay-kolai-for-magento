@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="Iyzico_Kolai::kolai" title="Kolai" translate="title" module="Iyzico_Kolai" sortOrder="90"
+             parent="Magento_Backend::system" resource="Iyzico_Kolai::logs"/>
+        <add id="Iyzico_Kolai::logs" title="Kolai Logları" translate="title" module="Iyzico_Kolai" sortOrder="10"
+             parent="Iyzico_Kolai::kolai" action="kolai/logs/index" resource="Iyzico_Kolai::logs"/>
+        <add id="Iyzico_Kolai::settings" title="Kolai Ayarları" translate="title" module="Iyzico_Kolai" sortOrder="20"
+             parent="Iyzico_Kolai::kolai" action="adminhtml/system_config/edit/section/kolai" resource="Iyzico_Kolai::config"/>
+    </menu>
+</config>

@@ -1,0 +1,18 @@
+{
+  "name": "iyzico/kolai-for-magento",
+  "type": "magento2-module",
+  "description": "Kolai entegrasyonu: urun/siparis/yorum uclari, sozlesmeler, iyzico iade-iptal.",
+  "license": "MIT",
+  "require": {
+    "php": ">=7.4",
+    "iyzico/kolai-php": "^1.0",
+    "iyzico/iyzipay-php": "^2.0.63",
+    "magento/framework": ">=103.0"
+  },
+  "autoload": {
+    "files": ["registration.php"],
+    "psr-4": {
+      "Iyzico\\Kolai\\": ""
+    }
+  }
+}

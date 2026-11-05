@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <kolai>
+            <general>
+                <enabled>0</enabled>
+            </general>
+            <iyzico>
+                <environment>sandbox</environment>
+            </iyzico>
+            <contract>
+                <delivery_date>30 gün</delivery_date>
+                <right_of_withdrawal_period>14 gün</right_of_withdrawal_period>
+            </contract>
+            <log>
+                <enabled>0</enabled>
+                <level>info</level>
+                <retention_days>14</retention_days>
+            </log>
+        </kolai>
+        <payment>
+            <kolai>
+                <!-- Orders reach this method only through POST /kolai/v1/orders; it is
+                     never offered at storefront or admin checkout. -->
+                <model>KolaiPaymentFacade</model>
+                <title>Kolai App (iyzico)</title>
+                <active>1</active>
+                <is_gateway>1</is_gateway>
+                <is_offline>0</is_offline>
+                <can_use_checkout>0</can_use_checkout>
+                <can_use_internal>0</can_use_internal>
+                <can_refund>1</can_refund>
+                <can_refund_partial_per_invoice>1</can_refund_partial_per_invoice>
+                <can_cancel>1</can_cancel>
+                <order_status>pending_payment</order_status>
+                <!-- Suppresses the new-order email at placement (payment is still
+                     pending); OrderUpdater sends it once PATCH marks the order paid. -->
+                <order_place_redirect_url>1</order_place_redirect_url>
+            </kolai>
+        </payment>
+    </default>
+</config>

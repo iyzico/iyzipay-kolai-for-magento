@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <table name="kolai_nonce" resource="default" engine="innodb" comment="Kolai consumed request salts (replay defence)">
+        <column xsi:type="varchar" name="nonce_hash" length="64" nullable="false" comment="sha256 of clientId|salt"/>
+        <column xsi:type="int" name="expires_at" unsigned="true" nullable="false" comment="Unix time"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="nonce_hash"/>
+        </constraint>
+        <index referenceId="KOLAI_NONCE_EXPIRES_AT" indexType="btree">
+            <column name="expires_at"/>
+        </index>
+    </table>
+
+    <table name="kolai_order" resource="default" engine="innodb" comment="Kolai payment data per order">
+        <column xsi:type="int" name="order_id" unsigned="true" nullable="false" comment="sales_order.entity_id"/>
+        <column xsi:type="varchar" name="payment_id" length="64" nullable="true" comment="iyzico paymentId"/>
+        <column xsi:type="mediumtext" name="item_transactions" nullable="true" comment="JSON itemTransactions"/>
+        <column xsi:type="text" name="refunded_transactions" nullable="true" comment="JSON refund ledger"/>
+        <column xsi:type="mediumtext" name="refund_operations" nullable="true" comment="JSON refund audit trail"/>
+        <column xsi:type="text" name="cancel_result" nullable="true" comment="JSON iyzico cancel result"/>
+        <column xsi:type="smallint" name="installment_count" unsigned="true" nullable="true" comment="Installments"/>
+        <column xsi:type="varchar" name="invoice_type" length="16" nullable="true" comment="personal or company"/>
+        <column xsi:type="varchar" name="tax_id" length="32" nullable="true" comment="TCKN or VKN"/>
+        <column xsi:type="varchar" name="tax_office" length="255" nullable="true" comment="Tax office"/>
+        <column xsi:type="timestamp" name="created_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP"/>
+        <column xsi:type="timestamp" name="updated_at" on_update="true" nullable="false" default="CURRENT_TIMESTAMP"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="order_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="KOLAI_ORDER_ORDER_ID_SALES_ORDER_ENTITY_ID"
+                    table="kolai_order" column="order_id" referenceTable="sales_order"
+                    referenceColumn="entity_id" onDelete="CASCADE"/>
+    </table>
+
+    <table name="kolai_log" resource="default" engine="innodb" comment="Kolai structured log">
+        <column xsi:type="bigint" name="log_id" unsigned="true" nullable="false" identity="true"/>
+        <column xsi:type="timestamp" name="created_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP"/>
+        <column xsi:type="varchar" name="level" length="16" nullable="false"/>
+        <column xsi:type="varchar" name="context" length="32" nullable="false"/>
+        <column xsi:type="varchar" name="request_id" length="40" nullable="true"/>
+        <column xsi:type="varchar" name="method" length="10" nullable="true"/>
+        <column xsi:type="varchar" name="route" length="255" nullable="true"/>
+        <column xsi:type="varchar" name="message" length="1000" nullable="false"/>
+        <column xsi:type="mediumtext" name="data" nullable="true"/>
+        <column xsi:type="int" name="duration_ms" unsigned="true" nullable="true"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="log_id"/>
+        </constraint>
+        <index referenceId="KOLAI_LOG_CREATED_AT" indexType="btree">
+            <column name="created_at"/>
+        </index>
+        <index referenceId="KOLAI_LOG_LEVEL" indexType="btree">
+            <column name="level"/>
+        </index>
+        <index referenceId="KOLAI_LOG_CONTEXT" indexType="btree">
+            <column name="context"/>
+        </index>
+        <index referenceId="KOLAI_LOG_REQUEST_ID" indexType="btree">
+            <column name="request_id"/>
+        </index>
+    </table>
+
+    <!-- Order-level money adjustments. Discount is negative (like discount_amount),
+         installment fee is signed: positive vade farki, negative indirim. -->
+    <table name="quote">
+        <column xsi:type="decimal" name="kolai_discount_amount" scale="4" precision="20" unsigned="false" nullable="true" comment="Kolai discount"/>
+        <column xsi:type="decimal" name="base_kolai_discount_amount" scale="4" precision="20" unsigned="false" nullable="true" comment="Kolai discount (base)"/>
+    </table>
+    <table name="quote_address">
+        <column xsi:type="decimal" name="kolai_discount_amount" scale="4" precision="20" unsigned="false" nullable="true" comment="Kolai discount"/>
+        <column xsi:type="decimal" name="base_kolai_discount_amount" scale="4" precision="20" unsigned="false" nullable="true" comment="Kolai discount (base)"/>
+    </table>
+    <table name="sales_order">
+        <column xsi:type="decimal" name="kolai_discount_amount" scale="4" precision="20" unsigned="false" nullable="true" comment="Kolai discount"/>
+        <column xsi:type="decimal" name="base_kolai_discount_amount" scale="4" precision="20" unsigned="false" nullable="true" comment="Kolai discount (base)"/>
+        <column xsi:type="decimal" name="kolai_installment_fee" scale="4" precision="20" unsigned="false" nullable="true" comment="Kolai installment adjustment"/>
+        <column xsi:type="decimal" name="base_kolai_installment_fee" scale="4" precision="20" unsigned="false" nullable="true" comment="Kolai installment adjustment (base)"/>
+    </table>
+    <table name="sales_invoice">
+        <column xsi:type="decimal" name="kolai_discount_amount" scale="4" precision="20" unsigned="false" nullable="true" comment="Kolai discount"/>
+        <column xsi:type="decimal" name="base_kolai_discount_amount" scale="4" precision="20" unsigned="false" nullable="true" comment="Kolai discount (base)"/>
+        <column xsi:type="decimal" name="kolai_installment_fee" scale="4" precision="20" unsigned="false" nullable="true" comment="Kolai installment adjustment"/>
+        <column xsi:type="decimal" name="base_kolai_installment_fee" scale="4" precision="20" unsigned="false" nullable="true" comment="Kolai installment adjustment (base)"/>
+    </table>
+    <table name="sales_creditmemo">
+        <column xsi:type="decimal" name="kolai_discount_amount" scale="4" precision="20" unsigned="false" nullable="true" comment="Kolai discount"/>
+        <column xsi:type="decimal" name="base_kolai_discount_amount" scale="4" precision="20" unsigned="false" nullable="true" comment="Kolai discount (base)"/>
+        <column xsi:type="decimal" name="kolai_installment_fee" scale="4" precision="20" unsigned="false" nullable="true" comment="Kolai installment adjustment"/>
+        <column xsi:type="decimal" name="base_kolai_installment_fee" scale="4" precision="20" unsigned="false" nullable="true" comment="Kolai installment adjustment (base)"/>
+    </table>
+</schema>

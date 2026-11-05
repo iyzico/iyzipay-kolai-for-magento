@@ -1,0 +1,137 @@
+<?php
+/** @var \Iyzico\Kolai\Block\Adminhtml\Order\KolaiInfo $block */
+/** @var \Magento\Framework\Escaper $escaper */
+$data = $block->getKolaiData();
+$transactions = $block->getTransactionRows();
+$operations = $block->getRefundOperations();
+$cancel = $block->getCancelResult();
+$invoiceTypes = ['personal' => __('Bireysel'), 'company' => __('Kurumsal')];
+?>
+<section class="admin__page-section kolai-order-info">
+    <div class="admin__page-section-title">
+        <span class="title"><?= $escaper->escapeHtml(__('Kolai / iyzico')) ?></span>
+    </div>
+    <div class="admin__page-section-content">
+        <?php if (!$data): ?>
+            <p><?= $escaper->escapeHtml(__('Bu sipariş için henüz Kolai ödeme bilgisi yok (PATCH /orders bekleniyor).')) ?></p>
+        <?php else: ?>
+            <table class="admin__table-secondary">
+                <tbody>
+                <tr>
+                    <th><?= $escaper->escapeHtml(__('iyzico paymentId')) ?></th>
+                    <td><?= $escaper->escapeHtml((string) ($data['payment_id'] ?? '—') ?: '—') ?></td>
+                </tr>
+                <?php if (!empty($data['installment_count'])): ?>
+                    <tr>
+                        <th><?= $escaper->escapeHtml(__('Taksit')) ?></th>
+                        <td><?= (int) $data['installment_count'] ?></td>
+                    </tr>
+                <?php endif; ?>
+                <?php if (!empty($data['invoice_type'])): ?>
+                    <tr>
+                        <th><?= $escaper->escapeHtml(__('Fatura tipi')) ?></th>
+                        <td><?= $escaper->escapeHtml((string) ($invoiceTypes[$data['invoice_type']] ?? $data['invoice_type'])) ?></td>
+                    </tr>
+                <?php endif; ?>
+                <?php if (!empty($data['tax_id'])): ?>
+                    <tr>
+                        <th><?= $escaper->escapeHtml(__('VKN / TCKN')) ?></th>
+                        <td><?= $escaper->escapeHtml((string) $data['tax_id']) ?></td>
+                    </tr>
+                <?php endif; ?>
+                <?php if (!empty($data['tax_office'])): ?>
+                    <tr>
+                        <th><?= $escaper->escapeHtml(__('Vergi dairesi')) ?></th>
+                        <td><?= $escaper->escapeHtml((string) $data['tax_office']) ?></td>
+                    </tr>
+                <?php endif; ?>
+                <?php if ($cancel): ?>
+                    <tr>
+                        <th><?= $escaper->escapeHtml(__('iyzico iptal')) ?></th>
+                        <td>
+                            <?php if (!empty($cancel['success'])): ?>
+                                <strong style="color:#185b00"><?= $escaper->escapeHtml(__('Başarılı')) ?></strong>
+                            <?php else: ?>
+                                <strong style="color:#e22626"><?= $escaper->escapeHtml(__('Başarısız')) ?></strong>
+                                <?= $escaper->escapeHtml(trim(($cancel['errorCode'] ?? '') . ' ' . ($cancel['errorMessage'] ?? ''))) ?>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endif; ?>
+                </tbody>
+            </table>
+
+            <?php if ($transactions): ?>
+                <h4 style="margin-top:16px"><?= $escaper->escapeHtml(__('Kalem işlemleri')) ?></h4>
+                <table class="data-table admin__table-primary">
+                    <thead>
+                    <tr>
+                        <th><?= $escaper->escapeHtml(__('paymentTransactionId')) ?></th>
+                        <th><?= $escaper->escapeHtml(__('Kalem')) ?></th>
+                        <th><?= $escaper->escapeHtml(__('Ödenen')) ?></th>
+                        <th><?= $escaper->escapeHtml(__('İade edilen')) ?></th>
+                        <th><?= $escaper->escapeHtml(__('İade edilebilir')) ?></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($transactions as $tx): ?>
+                        <tr>
+                            <td><?= $escaper->escapeHtml($tx['paymentTransactionId']) ?></td>
+                            <td><small><?= $escaper->escapeHtml($tx['itemId']) ?></small></td>
+                            <td><?= $escaper->escapeHtml($block->formatAmount($tx['paidPrice'])) ?></td>
+                            <td><?= $escaper->escapeHtml($block->formatAmount($tx['refunded'])) ?></td>
+                            <td><?= $escaper->escapeHtml($block->formatAmount($tx['refundable'])) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+
+            <?php if ($operations): ?>
+                <h4 style="margin-top:16px"><?= $escaper->escapeHtml(__('İade işlemleri')) ?></h4>
+                <table class="data-table admin__table-primary">
+                    <thead>
+                    <tr>
+                        <th><?= $escaper->escapeHtml(__('Zaman')) ?></th>
+                        <th><?= $escaper->escapeHtml(__('İşlem')) ?></th>
+                        <th><?= $escaper->escapeHtml(__('İstenen')) ?></th>
+                        <th><?= $escaper->escapeHtml(__('Gerçekleşen')) ?></th>
+                        <th><?= $escaper->escapeHtml(__('Durum')) ?></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($operations as $operation): ?>
+                        <?php
+                        $status = (string) ($operation['status'] ?? '');
+                        $moved = 0.0;
+                        foreach ((array) ($operation['allocations'] ?? []) as $amount) {
+                            $moved += (float) $amount;
+                        }
+                        $attention = $block->needsAttention($status);
+                        ?>
+                        <tr<?= $attention ? ' style="background:#fffbbb"' : '' ?>>
+                            <td><?= $escaper->escapeHtml((string) ($operation['at'] ?? '')) ?></td>
+                            <td><small><?= $escaper->escapeHtml(substr((string) ($operation['operationId'] ?? ''), 0, 8)) ?></small></td>
+                            <td><?= $escaper->escapeHtml($block->formatAmount((float) ($operation['requested'] ?? 0))) ?></td>
+                            <td><?= $escaper->escapeHtml($block->formatAmount($moved)) ?></td>
+                            <td>
+                                <strong<?= $attention ? ' style="color:#e22626"' : '' ?>><?= $escaper->escapeHtml($status) ?></strong>
+                                <?php if (!empty($operation['message'])): ?>
+                                    <br><small><?= $escaper->escapeHtml((string) $operation['message']) ?></small>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <?php if (array_filter($operations, static function ($o) use ($block) {
+                    return $block->needsAttention((string) ($o['status'] ?? ''));
+                })): ?>
+                    <div class="message message-warning" style="margin-top:8px">
+                        <?= $escaper->escapeHtml(__('Sarı satırlar iyzico ile mağaza kayıtlarının ayrışmış olabileceğini gösterir: "Gerçekleşen" tutar iyzico\'da iade edilmiştir. Yeniden denemeden önce kontrol edin; gerekirse bu tutar için çevrimdışı (offline) iade faturası oluşturun.')) ?>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
+        <?php endif; ?>
+    </div>
+</section>

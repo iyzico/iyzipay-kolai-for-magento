@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Sales:etc/sales.xsd">
+    <!-- Quote: grand_total (550) sums every registered total amount, so ours
+         only registers one and must run before it. -->
+    <section name="quote">
+        <group name="totals">
+            <item name="kolai_discount" instance="Iyzico\Kolai\Model\Total\Quote\Discount" sort_order="500"/>
+        </group>
+    </section>
+    <!-- Invoice / credit memo: each collector adds to grand_total itself, so
+         ours runs after tax and before the stock grand_total collectors. -->
+    <section name="order_invoice">
+        <group name="totals">
+            <item name="kolai_adjustment" instance="Iyzico\Kolai\Model\Total\Invoice\Adjustment" sort_order="300"/>
+        </group>
+    </section>
+    <section name="order_creditmemo">
+        <group name="totals">
+            <item name="kolai_adjustment" instance="Iyzico\Kolai\Model\Total\Creditmemo\Adjustment" sort_order="350"/>
+        </group>
+    </section>
+</config>
