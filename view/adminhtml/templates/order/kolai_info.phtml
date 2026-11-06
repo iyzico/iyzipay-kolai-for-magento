@@ -125,10 +125,18 @@ $invoiceTypes = ['personal' => __('Bireysel'), 'company' => __('Kurumsal')];
                     </tbody>
                 </table>
                 <?php if (array_filter($operations, static function ($o) use ($block) {
-                    return $block->needsAttention((string) ($o['status'] ?? ''));
+                    $status = (string) ($o['status'] ?? '');
+                    return $block->needsAttention($status) && !$block->isAwaitingCreditMemo($status);
                 })): ?>
                     <div class="message message-warning" style="margin-top:8px">
                         <?= $escaper->escapeHtml(__('Sarı satırlar iyzico ile mağaza kayıtlarının ayrışmış olabileceğini gösterir: "Gerçekleşen" tutar iyzico\'da iade edilmiştir. Yeniden denemeden önce kontrol edin; gerekirse bu tutar için çevrimdışı (offline) iade faturası oluşturun.')) ?>
+                    </div>
+                <?php endif; ?>
+                <?php if (array_filter($operations, static function ($o) use ($block) {
+                    return $block->isAwaitingCreditMemo((string) ($o['status'] ?? ''));
+                })): ?>
+                    <div class="message message-warning" style="margin-top:8px">
+                        <?= $escaper->escapeHtml(__('"awaiting_credit_memo": tutar iyzico\'da iade edildi ama iade faturası (credit memo) kaydedilemedi. Aynı tutarla iade faturasını tekrar oluşturup "Refund" ile gönderin: iyzico\'ya tekrar para gönderilmez, yalnızca kayıt oluşturulur.')) ?>
                     </div>
                 <?php endif; ?>
             <?php endif; ?>

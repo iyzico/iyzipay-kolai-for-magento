@@ -27,6 +27,13 @@ use Throwable;
  * the whole amount has moved. A different amount abandons the open operation
  * (kept for manual reconciliation) and starts afresh — the ledger still caps
  * each transaction at its paidPrice, so nothing is refunded twice.
+ *
+ * Even a fully sent operation is not "success" yet: Magento can still roll the
+ * credit memo back after this returns (a later save or observer throws). It is
+ * left "awaiting_credit_memo" and RefundRecord settles it on the next look,
+ * from the committed refund transaction. Until then a same-amount retry
+ * resumes it with nothing left to send and only records the credit memo,
+ * instead of starting a new operation that would refund the money again.
  */
 class RefundService
 {
@@ -36,9 +43,11 @@ class RefundService
     public const STATUS_FAILED               = 'failed';
     public const STATUS_NEEDS_RECONCILIATION = 'needs_reconciliation';
     public const STATUS_ABANDONED            = 'abandoned';
+    /** Everything moved at iyzico; the credit memo is not known to be committed. */
+    public const STATUS_AWAITING_CREDIT_MEMO = 'awaiting_credit_memo';
 
     /** Statuses a same-amount retry may continue. */
-    private const RESUMABLE = [self::STATUS_PARTIAL, self::STATUS_IN_PROGRESS];
+    private const RESUMABLE = [self::STATUS_PARTIAL, self::STATUS_IN_PROGRESS, self::STATUS_AWAITING_CREDIT_MEMO];
 
     private const MAX_OPERATIONS = 50;
 
@@ -48,17 +57,21 @@ class RefundService
 
     private OrderLock $lock;
 
+    private RefundRecord $record;
+
     private Logger $logger;
 
     public function __construct(
         KolaiOrderRepository $repository,
         IyzicoClientFactory $clientFactory,
         OrderLock $lock,
+        RefundRecord $record,
         Logger $logger
     ) {
         $this->repository    = $repository;
         $this->clientFactory = $clientFactory;
         $this->lock          = $lock;
+        $this->record        = $record;
         $this->logger        = $logger;
     }
 
@@ -109,7 +122,9 @@ class RefundService
         $data         = $this->repository->get($orderId, true);
         $transactions = (array) ($data['item_transactions'] ?? []);
         $ledger       = self::floats((array) ($data['refunded_transactions'] ?? []));
-        $operations   = array_values((array) ($data['refund_operations'] ?? []));
+        // Earlier operations whose credit memo is now known to be committed (or
+        // known to be missing) are settled before anything is resumed.
+        $operations   = $this->record->settle($orderId, $data, true);
 
         if ($transactions === []) {
             throw new LocalizedException(__(
@@ -135,11 +150,17 @@ class RefundService
         }
         $operationId = (string) $operations[$index]['operationId'];
 
-        // An earlier attempt moved everything but failed before recording the
-        // credit memo: nothing left to send, let this credit memo record it.
+        // An earlier attempt moved everything but its credit memo was not saved
+        // (failed or rolled back): nothing left to send, let this credit memo
+        // record it. Still awaiting — this credit memo can roll back too.
         if ($request <= RefundAllocator::EPSILON) {
-            $operations = $this->mark($operations, $index, self::STATUS_SUCCESS, $succeeded, '');
+            $operations = $this->mark($operations, $index, self::STATUS_AWAITING_CREDIT_MEMO, $succeeded, '');
             $this->persistOperations($orderId, $operations);
+            $this->logger->warning('kolai.payment: refund already sent, recording credit memo only', [
+                'order_id'     => $orderId,
+                'operation_id' => $operationId,
+                'amount'       => $amount,
+            ]);
             $order->addCommentToStatusHistory(__(
                 'iyzico iadesi daha önce tamamlanmıştı (%1, işlem %2); iade kaydı oluşturuldu.',
                 self::money($amount),
@@ -231,7 +252,8 @@ class RefundService
             $notes[] = __('iyzico iade başarılı: %1 (işlem %2)', self::money($step['amount']), $transactionId);
         }
 
-        $operations = $this->mark($operations, $index, self::STATUS_SUCCESS, $succeeded, '');
+        // Not "success" until the credit memo is committed: see RefundRecord.
+        $operations = $this->mark($operations, $index, self::STATUS_AWAITING_CREDIT_MEMO, $succeeded, '');
         $this->persistOperations($orderId, $operations);
 
         // These ride the credit memo transaction — fine, it commits on success.

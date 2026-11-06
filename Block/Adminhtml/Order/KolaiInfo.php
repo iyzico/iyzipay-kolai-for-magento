@@ -6,6 +6,8 @@ namespace Iyzico\Kolai\Block\Adminhtml\Order;
 
 use Iyzico\Kolai\Model\Order\KolaiOrderRepository;
 use Iyzico\Kolai\Model\Payment\PaymentMethod;
+use Iyzico\Kolai\Model\Payment\RefundRecord;
+use Iyzico\Kolai\Model\Payment\RefundService;
 use Magento\Backend\Block\Template;
 use Magento\Backend\Block\Template\Context;
 use Magento\Framework\Registry;
@@ -19,11 +21,15 @@ use Magento\Sales\Model\Order;
 class KolaiInfo extends Template
 {
     /** Operation statuses that need a human. */
-    public const ATTENTION_STATUSES = ['partial', 'needs_reconciliation', 'abandoned', 'failed'];
+    public const ATTENTION_STATUSES = [
+        'partial', 'needs_reconciliation', 'abandoned', 'failed', RefundService::STATUS_AWAITING_CREDIT_MEMO,
+    ];
 
     private Registry $registry;
 
     private KolaiOrderRepository $repository;
+
+    private RefundRecord $refundRecord;
 
     /** @var array<string,mixed>|null */
     private ?array $data = null;
@@ -32,11 +38,13 @@ class KolaiInfo extends Template
         Context $context,
         Registry $registry,
         KolaiOrderRepository $repository,
+        RefundRecord $refundRecord,
         array $data = []
     ) {
         parent::__construct($context, $data);
-        $this->registry   = $registry;
-        $this->repository = $repository;
+        $this->registry     = $registry;
+        $this->repository   = $repository;
+        $this->refundRecord = $refundRecord;
     }
 
     public function getOrder(): ?Order
@@ -96,15 +104,26 @@ class KolaiInfo extends Template
         return $rows;
     }
 
-    /** @return array<int,array<string,mixed>> Newest first. */
+    /**
+     * Newest first. An operation still "awaiting_credit_memo" in storage is
+     * shown as what the database now says it is (display only; the next
+     * refund persists it).
+     *
+     * @return array<int,array<string,mixed>>
+     */
     public function getRefundOperations(): array
     {
-        $operations = array_values(array_filter(
-            (array) ($this->getKolaiData()['refund_operations'] ?? []),
-            'is_array'
-        ));
+        $data = $this->getKolaiData();
+        if ($data === []) {
+            return [];
+        }
 
-        return array_reverse($operations);
+        return array_reverse($this->refundRecord->settle((int) $this->getOrder()->getId(), $data));
+    }
+
+    public function isAwaitingCreditMemo(string $status): bool
+    {
+        return $status === RefundService::STATUS_AWAITING_CREDIT_MEMO;
     }
 
     public function needsAttention(string $status): bool

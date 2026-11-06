@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Iyzico\Kolai\Gateway\Command;
 
 use Iyzico\Kolai\Model\Order\KolaiOrderRepository;
+use Iyzico\Kolai\Model\Payment\RefundRecord;
 use Iyzico\Kolai\Model\Payment\RefundService;
 use Magento\Payment\Gateway\CommandInterface;
 use Magento\Payment\Gateway\Helper\SubjectReader;
@@ -53,11 +54,10 @@ class RefundCommand implements CommandInterface
         $operationId = $this->refundService->refund($order, $amount, $currency);
 
         // Unique per refund, so several partial credit memos each get their own
-        // transaction instead of colliding on one id.
+        // transaction instead of colliding on one id. RefundRecord looks for this
+        // id to tell whether the credit memo was committed.
         $paymentId = (string) ($this->repository->get((int) $order->getId())['payment_id'] ?? '');
-        $payment->setTransactionId(
-            ($paymentId !== '' ? $paymentId : 'kolai-' . $order->getId()) . '-refund-' . substr($operationId, 0, 8)
-        );
+        $payment->setTransactionId(RefundRecord::transactionId($paymentId, (int) $order->getId(), $operationId));
         $payment->setIsTransactionClosed(true);
 
         return null;
